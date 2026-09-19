@@ -1,0 +1,8 @@
+import type { VercelRequest, VercelResponse } from '@vercel/node'
+import { sql } from '../_lib/db.js'; import { apiError, method, noStore } from '../_lib/http.js'; import { requireAdmin } from '../_lib/auth.js'; import { feedbackSchema, parsedFilters } from '../_lib/validation.js'; import { where } from '../_lib/feedback-query.js'
+export default async function handler(req: VercelRequest, res: VercelResponse) {
+  noStore(res); if (!method(req, res, ['GET', 'POST'])) return
+  if (req.method === 'POST') { const parsed = feedbackSchema.safeParse(req.body); if (!parsed.success) return apiError(res, 400, parsed.error.issues[0]?.message ?? 'Invalid feedback.'); try { await sql.query('INSERT INTO feedback (programme, session, class, level, feedback_type, feedback_message) VALUES ($1, $2, $3, $4, $5, $6)', [parsed.data.programme, parsed.data.session, parsed.data.class, parsed.data.level, parsed.data.feedbackType, parsed.data.feedbackMessage]); return res.status(201).json({ message: 'Feedback submitted successfully.' }) } catch { return apiError(res) } }
+  if (!await requireAdmin(req, res)) return; const filters = parsedFilters(req.query); if (!filters.success) return apiError(res, 400, 'One or more filters are invalid.'); const query = where(filters.data)
+  try { const rows = await sql.query(`SELECT id, programme, session, class, level, feedback_type AS "feedbackType", feedback_message AS "feedbackMessage", created_at AS "createdAt" FROM feedback${query.text} ORDER BY created_at DESC LIMIT 500`, query.values); return res.status(200).json({ feedback: rows }) } catch { return apiError(res) }
+}

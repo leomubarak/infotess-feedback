@@ -1,0 +1,3 @@
+import type { VercelRequest, VercelResponse } from '@vercel/node'
+import { sql } from '../_lib/db.js'; import { apiError, method, noStore } from '../_lib/http.js'; import { requireAdmin } from '../_lib/auth.js'
+export default async function handler(req: VercelRequest, res: VercelResponse) { noStore(res); if (!method(req, res, ['DELETE'])) return; if (!await requireAdmin(req, res)) return; const id = Number(req.query.id); if (!Number.isSafeInteger(id) || id < 1) return apiError(res, 400, 'Invalid feedback record.'); try { const result = await sql.query('DELETE FROM feedback WHERE id = $1 RETURNING id', [id]); if (!result.length) return apiError(res, 404, 'Feedback was not found.'); res.status(204).end() } catch { return apiError(res) } }

@@ -1,0 +1,7 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base { * { box-sizing: border-box; } body { @apply m-0 min-w-0 bg-slate-50 font-sans text-slate-800; } button, input, select, textarea { font: inherit; } button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible { @apply outline outline-2 outline-offset-2 outline-university-700; } }
+@layer components { .label { @apply mb-1 block text-sm font-semibold text-slate-800; } .input { @apply block min-h-11 w-full border border-slate-300 bg-white px-3 py-2 text-base text-slate-900 placeholder:text-slate-400 focus:border-university-700 focus:outline-none; } .field-error { @apply mt-1 text-sm text-red-700; } .btn-primary { @apply inline-flex min-h-11 items-center justify-center gap-2 bg-university-700 px-4 py-2 text-sm font-bold text-white hover:bg-university-800 disabled:cursor-not-allowed disabled:bg-slate-400; } .btn-secondary { @apply inline-flex min-h-11 items-center justify-center gap-2 border border-university-700 bg-white px-4 py-2 text-sm font-bold text-university-700 hover:bg-university-50; } .btn-danger { @apply inline-flex min-h-11 items-center justify-center bg-red-700 px-4 py-2 text-sm font-bold text-white hover:bg-red-800; } }
+@media print { header > div:last-child, button, .btn-secondary { display: none !important; } body { background: white; } }
