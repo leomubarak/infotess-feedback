@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 import type { VercelRequest, VercelResponse } from '@vercel/node'
 import { sql } from '../_lib/db.js'
 import { apiError, method, noStore } from '../_lib/http.js'
@@ -11,6 +12,18 @@ export default async function handler(
 
   if (!method(req, res, ['GET'])) return
   if (!await requireAdmin(req, res)) return
+=======
+import type { VercelRequest, VercelResponse } from "@vercel/node";
+import { sql } from "../_lib/db.js";
+import { apiError, method, noStore } from "../_lib/http.js";
+import { requireAdmin } from "../_lib/auth.js";
+
+export default async function handler(req: VercelRequest, res: VercelResponse) {
+  noStore(res);
+
+  if (!method(req, res, ["GET"])) return;
+  if (!(await requireAdmin(req, res))) return;
+>>>>>>> 206e1c6 (Fix analytics database queries)
 
   try {
     const [stats, byType, byProgramme, bySession, byLevel, overTime] =
@@ -61,13 +74,23 @@ export default async function handler(
           GROUP BY created_at::date
           ORDER BY created_at::date
         `),
+<<<<<<< HEAD
       ])
+=======
+      ]);
+>>>>>>> 206e1c6 (Fix analytics database queries)
 
     res.status(200).json({
       stats: stats[0],
       charts: { byType, byProgramme, bySession, byLevel, overTime },
+<<<<<<< HEAD
     })
   } catch {
     return apiError(res)
+=======
+    });
+  } catch {
+    return apiError(res);
+>>>>>>> 206e1c6 (Fix analytics database queries)
   }
 }
