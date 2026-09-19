@@ -1,9 +1,73 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
-import { sql } from '../_lib/db.js'; import { apiError, method, noStore } from '../_lib/http.js'; import { requireAdmin } from '../_lib/auth.js'
-export default async function handler(req: VercelRequest, res: VercelResponse) {
-  noStore(res); if (!method(req, res, ['GET'])) return; if (!await requireAdmin(req, res)) return
-  try { const [stats, byType, byProgramme, bySession, byLevel, overTime] = await Promise.all([
-    sql(`SELECT count(*)::int AS total, count(*) FILTER (WHERE feedback_type='Suggestion')::int AS suggestions, count(*) FILTER (WHERE feedback_type='Comment')::int AS comments, count(*) FILTER (WHERE feedback_type='Complaint')::int AS complaints, count(*) FILTER (WHERE feedback_type='Appreciation')::int AS appreciations, count(*) FILTER (WHERE feedback_type='Other')::int AS other, count(*) FILTER (WHERE created_at >= date_trunc('day', now()))::int AS today, count(*) FILTER (WHERE created_at >= date_trunc('week', now()))::int AS week, count(*) FILTER (WHERE created_at >= date_trunc('month', now()))::int AS month FROM feedback`),
-    sql(`SELECT feedback_type AS name, count(*)::int AS value FROM feedback GROUP BY feedback_type ORDER BY name`), sql(`SELECT programme AS name, count(*)::int AS value FROM feedback GROUP BY programme ORDER BY value DESC`), sql(`SELECT session AS name, count(*)::int AS value FROM feedback GROUP BY session ORDER BY name`), sql(`SELECT level AS name, count(*)::int AS value FROM feedback GROUP BY level ORDER BY name`), sql(`SELECT to_char(created_at::date, 'Mon DD') AS date, count(*)::int AS value FROM feedback WHERE created_at >= current_date - interval '29 days' GROUP BY created_at::date ORDER BY created_at::date`)
-  ]); res.status(200).json({ stats: stats[0], charts: { byType, byProgramme, bySession, byLevel, overTime } }) } catch { return apiError(res) }
+import { sql } from '../_lib/db.js'
+import { apiError, method, noStore } from '../_lib/http.js'
+import { requireAdmin } from '../_lib/auth.js'
+
+export default async function handler(
+  req: VercelRequest,
+  res: VercelResponse,
+) {
+  noStore(res)
+
+  if (!method(req, res, ['GET'])) return
+  if (!await requireAdmin(req, res)) return
+
+  try {
+    const [stats, byType, byProgramme, bySession, byLevel, overTime] =
+      await Promise.all([
+        sql.query(`
+          SELECT
+            count(*)::int AS total,
+            count(*) FILTER (WHERE feedback_type = 'Suggestion')::int AS suggestions,
+            count(*) FILTER (WHERE feedback_type = 'Comment')::int AS comments,
+            count(*) FILTER (WHERE feedback_type = 'Complaint')::int AS complaints,
+            count(*) FILTER (WHERE feedback_type = 'Appreciation')::int AS appreciations,
+            count(*) FILTER (WHERE feedback_type = 'Other')::int AS other,
+            count(*) FILTER (WHERE created_at >= date_trunc('day', now()))::int AS today,
+            count(*) FILTER (WHERE created_at >= date_trunc('week', now()))::int AS week,
+            count(*) FILTER (WHERE created_at >= date_trunc('month', now()))::int AS month
+          FROM feedback
+        `),
+        sql.query(`
+          SELECT feedback_type AS name, count(*)::int AS value
+          FROM feedback
+          GROUP BY feedback_type
+          ORDER BY name
+        `),
+        sql.query(`
+          SELECT programme AS name, count(*)::int AS value
+          FROM feedback
+          GROUP BY programme
+          ORDER BY value DESC
+        `),
+        sql.query(`
+          SELECT session AS name, count(*)::int AS value
+          FROM feedback
+          GROUP BY session
+          ORDER BY name
+        `),
+        sql.query(`
+          SELECT level AS name, count(*)::int AS value
+          FROM feedback
+          GROUP BY level
+          ORDER BY name
+        `),
+        sql.query(`
+          SELECT
+            to_char(created_at::date, 'Mon DD') AS date,
+            count(*)::int AS value
+          FROM feedback
+          WHERE created_at >= current_date - interval '29 days'
+          GROUP BY created_at::date
+          ORDER BY created_at::date
+        `),
+      ])
+
+    res.status(200).json({
+      stats: stats[0],
+      charts: { byType, byProgramme, bySession, byLevel, overTime },
+    })
+  } catch {
+    return apiError(res)
+  }
 }
